@@ -1,44 +1,31 @@
-import React, { useEffect, useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 
+const initialReservations = [
+  { id: 'res-001', name: 'Rahul Sharma', phone: '+91 98765 43210', date: '2026-07-05', time: '7:00 PM', guests: 4, status: 'pending' },
+  { id: 'res-002', name: 'Priya Patel', phone: '+91 87654 32109', date: '2026-07-05', time: '8:30 PM', guests: 2, status: 'confirmed' },
+  { id: 'res-003', name: 'Amit Kumar', phone: '+91 76543 21098', date: '2026-07-06', time: '12:00 PM', guests: 6, status: 'pending' },
+  { id: 'res-004', name: 'Sneha Gupta', phone: '+91 65432 10987', date: '2026-07-06', time: '1:30 PM', guests: 3, status: 'cancelled' },
+  { id: 'res-005', name: 'Vikram Singh', phone: '+91 54321 09876', date: '2026-07-07', time: '7:30 PM', guests: 8, status: 'pending' },
+];
+
 export default function ReservationsPage() {
-  const [reservations, setReservations] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [reservations, setReservations] = useState(initialReservations);
   const [dateFilter, setDateFilter] = useState('');
 
-  const fetchReservations = async () => {
-    setLoading(true);
-    let query = (supabase.from('reservations') as any).select('*').order('date', { ascending: true });
-    
-    if (dateFilter) {
-      query = query.eq('date', dateFilter);
-    }
+  const filtered = reservations.filter((res) => {
+    if (dateFilter && res.date !== dateFilter) return false;
+    return true;
+  });
 
-    const { data, error } = await query;
-    if (error) {
-      toast.error('Failed to fetch reservations');
-    } else {
-      setReservations(data || []);
-    }
-    setLoading(false);
-  };
-
-  useEffect(() => {
-    fetchReservations();
-  }, [dateFilter]);
-
-  const updateStatus = async (id: string, newStatus: string) => {
-    const { error } = await (supabase.from('reservations') as any).update({ status: newStatus }).eq('id', id);
-    if (!error) {
-      toast.success(`Reservation ${newStatus}`);
-      fetchReservations();
-    } else {
-      toast.error('Failed to update status');
-    }
+  const updateStatus = (id: string, newStatus: string) => {
+    setReservations((prev) =>
+      prev.map((r) => (r.id === id ? { ...r, status: newStatus } : r))
+    );
+    toast.success(`Reservation ${newStatus}`);
   };
 
   return (
@@ -75,11 +62,9 @@ export default function ReservationsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-neutral-800">
-                {loading ? (
-                  <tr><td colSpan={5} className="p-8 text-center text-neutral-400">Loading...</td></tr>
-                ) : reservations.length === 0 ? (
+                {filtered.length === 0 ? (
                   <tr><td colSpan={5} className="p-8 text-center text-neutral-400">No reservations found.</td></tr>
-                ) : reservations.map((res) => (
+                ) : filtered.map((res) => (
                   <tr key={res.id} className="hover:bg-neutral-800/50">
                     <td className="px-6 py-4">
                       <div className="font-medium text-white">{res.name}</div>

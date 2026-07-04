@@ -2,9 +2,7 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Flame, Mail, Lock, Eye, EyeOff } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { useAuthStore } from '@/store/authStore';
 
 export default function LoginPage() {
   const [showPw, setShowPw] = useState(false);
@@ -12,7 +10,6 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  // Role fetching happens in authStore shortly after session sets
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -22,44 +19,16 @@ export default function LoginPage() {
     }
     
     setLoading(true);
-    try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-      if (error) throw error;
-      
+    // Prototype mode — simulate login
+    setTimeout(() => {
       toast.success("Welcome back!");
-      // We will rely on App.tsx or a generic redirect, but immediately navigating helps UI feel fast
-      // The auth listener in App will fetch the role and redirect if they hit a protected route, 
-      // but let's fetch it here to redirect accurately.
-      if (data.user) {
-         const { data: userData } = await supabase.from('users').select('role').eq('id', data.user.id).single();
-         const role = (userData as any)?.role || 'customer';
-         
-         if (role === 'admin') navigate('/admin');
-         else if (role === 'staff') navigate('/kitchen');
-         else navigate('/menu');
-      }
-    } catch (error: any) {
-      toast.error(error.message || "Authentication failed");
-    } finally {
       setLoading(false);
-    }
+      navigate('/menu');
+    }, 800);
   };
 
-  const handleGoogleAuth = async () => {
-    try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
-        }
-      });
-      if (error) throw error;
-    } catch (error: any) {
-      toast.error(error.message || "Google auth failed");
-    }
+  const handleGoogleAuth = () => {
+    toast.info("Google login coming soon!");
   };
 
   return (

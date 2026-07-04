@@ -1,8 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { IndianRupee, ShoppingBag, TrendingUp, Users } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { supabase } from '@/integrations/supabase/client';
 
 const revenueData = [
   { name: 'Mon', revenue: 4000 },
@@ -22,33 +21,16 @@ const categoryData = [
 ];
 const COLORS = ['#f97316', '#3b82f6', '#10b981', '#ef4444'];
 
-export default function OverviewPage() {
-  const [stats, setStats] = useState({ revenue: 0, orders: 0, avgValue: 0, newUsers: 0 });
-  const [recentOrders, setRecentOrders] = useState<any[]>([]);
+const mockRecentOrders = [
+  { id: 'a1b2c3d4', customer_name: 'Rahul Sharma', status: 'preparing', total_amount: 549 },
+  { id: 'e5f6g7h8', customer_name: 'Priya Patel', status: 'delivered', total_amount: 399 },
+  { id: 'i9j0k1l2', customer_name: 'Amit Kumar', status: 'pending', total_amount: 749 },
+  { id: 'm3n4o5p6', customer_name: 'Sneha Gupta', status: 'delivered', total_amount: 299 },
+  { id: 'q7r8s9t0', customer_name: 'Vikram Singh', status: 'preparing', total_amount: 629 },
+];
 
-  useEffect(() => {
-    // Mocking real-time fetch since tables might be empty or missing for now
-    const fetchStats = async () => {
-      try {
-        const { data: orders } = await (supabase.from('orders') as any).select('*').order('created_at', { ascending: false }).limit(10);
-        
-        if (orders) {
-          setRecentOrders(orders);
-          const totalRev = orders.reduce((acc: number, order: any) => acc + (order.total_amount || 0), 0);
-          setStats({
-            // Dummy logic or calculated
-            revenue: totalRev > 0 ? totalRev : 42500,
-            orders: orders.length > 0 ? orders.length : 156,
-            avgValue: orders.length > 0 ? Math.round(totalRev / orders.length) : 480,
-            newUsers: 24
-          });
-        }
-      } catch (err) {
-        console.error(err);
-      }
-    };
-    fetchStats();
-  }, []);
+export default function OverviewPage() {
+  const stats = { revenue: 42500, orders: 156, avgValue: 480, newUsers: 24 };
 
   return (
     <div className="space-y-8">
@@ -169,9 +151,9 @@ export default function OverviewPage() {
                 </tr>
               </thead>
               <tbody>
-                {recentOrders.length > 0 ? recentOrders.map((order) => (
+                {mockRecentOrders.map((order) => (
                   <tr key={order.id} className="border-b border-neutral-800 hover:bg-neutral-800/50">
-                    <td className="px-6 py-4 font-mono text-orange-400">#{order.id?.split('-')[0]}</td>
+                    <td className="px-6 py-4 font-mono text-orange-400">#{order.id.substring(0, 8)}</td>
                     <td className="px-6 py-4 font-medium text-white">{order.customer_name}</td>
                     <td className="px-6 py-4">
                       <span className={`px-2.5 py-1 rounded-full text-xs font-semibold
@@ -179,16 +161,12 @@ export default function OverviewPage() {
                         order.status === 'preparing' ? 'bg-blue-500/20 text-blue-400' :
                         order.status === 'delivered' ? 'bg-green-500/20 text-green-400' :
                         'bg-neutral-500/20 text-neutral-400'}`}>
-                        {order.status?.toUpperCase()}
+                        {order.status.toUpperCase()}
                       </span>
                     </td>
                     <td className="px-6 py-4 text-white font-medium">₹{order.total_amount}</td>
                   </tr>
-                )) : (
-                  <tr>
-                    <td colSpan={4} className="px-6 py-8 text-center text-neutral-500">No recent orders.</td>
-                  </tr>
-                )}
+                ))}
               </tbody>
             </table>
           </div>

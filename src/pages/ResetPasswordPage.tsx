@@ -1,8 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Flame, Lock, Eye, EyeOff } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 export default function ResetPasswordPage() {
@@ -11,9 +10,6 @@ export default function ResetPasswordPage() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-
-  // Supabase automatically pulls the access_token from the URL hash
-  // when redirecting from the email, so we can just update the user right away.
   
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,19 +23,12 @@ export default function ResetPasswordPage() {
     }
     
     setLoading(true);
-    try {
-      const { error } = await supabase.auth.updateUser({ password });
-      if (error) throw error;
-      
+    // Prototype mode — simulate password update
+    setTimeout(() => {
       toast.success("Password updated successfully!");
-      // Log them out strictly to ensure clean state, or just let them stay authenticated.
-      // Usually after password update, they are authenticated. Let's redirect to profile or admin:
-      navigate('/');
-    } catch (error: any) {
-      toast.error(error.message || "Failed to update password. Link may have expired.");
-    } finally {
       setLoading(false);
-    }
+      navigate('/');
+    }, 800);
   };
 
   return (

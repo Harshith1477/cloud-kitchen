@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Flame, Mail } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 export default function ForgotPasswordPage() {
@@ -18,19 +17,12 @@ export default function ForgotPasswordPage() {
     }
     
     setLoading(true);
-    try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password`,
-      });
-      if (error) throw error;
-      
+    // Prototype mode — simulate sending reset link
+    setTimeout(() => {
       setSent(true);
       toast.success("Password reset link sent to your email.");
-    } catch (error: any) {
-      toast.error(error.message || "Failed to send reset link");
-    } finally {
       setLoading(false);
-    }
+    }, 800);
   };
 
   return (

@@ -1,51 +1,33 @@
-import React, { useEffect, useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import React, { useState } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 
+const initialOrders = [
+  { id: 'a1b2c3d4-5678', created_at: '2026-07-04T10:30:00', customer_name: 'Rahul Sharma', customer_phone: '+91 98765 43210', items: [{ name: 'Smash Burger', quantity: 2 }, { name: 'Loaded Fries', quantity: 1 }], total_amount: 647, status: 'preparing' },
+  { id: 'e5f6g7h8-9012', created_at: '2026-07-04T11:15:00', customer_name: 'Priya Patel', customer_phone: '+91 87654 32109', items: [{ name: 'Veggie Supreme', quantity: 1 }, { name: 'Berry Blast Shake', quantity: 1 }], total_amount: 358, status: 'delivered' },
+  { id: 'i9j0k1l2-3456', created_at: '2026-07-04T12:00:00', customer_name: 'Amit Kumar', customer_phone: '+91 76543 21098', items: [{ name: 'Burger + Fries Combo', quantity: 1 }, { name: 'Truffle Burger', quantity: 1 }], total_amount: 748, status: 'pending' },
+  { id: 'm3n4o5p6-7890', created_at: '2026-07-04T13:45:00', customer_name: 'Sneha Gupta', customer_phone: '+91 65432 10987', items: [{ name: 'Chicken Shawarma', quantity: 2 }], total_amount: 358, status: 'ready' },
+  { id: 'q7r8s9t0-1234', created_at: '2026-07-04T14:20:00', customer_name: 'Vikram Singh', customer_phone: '+91 54321 09876', items: [{ name: 'Wrap Meal Deal', quantity: 1 }, { name: 'Cold Brew Coffee', quantity: 2 }], total_amount: 607, status: 'pending' },
+];
+
 export default function OrdersPage() {
-  const [orders, setOrders] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [orders, setOrders] = useState(initialOrders);
   const [statusFilter, setStatusFilter] = useState('all');
   const [dateFilter, setDateFilter] = useState('');
 
-  const fetchOrders = async () => {
-    setLoading(true);
-    let query = (supabase.from('orders') as any).select('*').order('created_at', { ascending: false });
-    
-    if (statusFilter !== 'all') {
-      query = query.eq('status', statusFilter);
-    }
-    
-    if (dateFilter) {
-      // Basic date filtering
-      query = query.gte('created_at', `${dateFilter}T00:00:00`).lte('created_at', `${dateFilter}T23:59:59`);
-    }
+  const filtered = orders.filter((order) => {
+    if (statusFilter !== 'all' && order.status !== statusFilter) return false;
+    if (dateFilter && !order.created_at.startsWith(dateFilter)) return false;
+    return true;
+  });
 
-    const { data, error } = await query;
-    if (error) {
-      toast.error('Failed to fetch orders');
-    } else {
-      setOrders(data || []);
-    }
-    setLoading(false);
-  };
-
-  useEffect(() => {
-    fetchOrders();
-  }, [statusFilter, dateFilter]);
-
-  const updateOrderStatus = async (orderId: string, newStatus: string) => {
-    const { error } = await (supabase.from('orders') as any).update({ status: newStatus }).eq('id', orderId);
-    if (error) {
-      toast.error('Failed to update status');
-    } else {
-      toast.success(`Order status updated to ${newStatus}`);
-      fetchOrders();
-    }
+  const updateOrderStatus = (orderId: string, newStatus: string) => {
+    setOrders((prev) =>
+      prev.map((o) => (o.id === orderId ? { ...o, status: newStatus } : o))
+    );
+    toast.success(`Order status updated to ${newStatus}`);
   };
 
   const getStatusColor = (status: string) => {
@@ -90,9 +72,7 @@ export default function OrdersPage() {
 
       <Card className="bg-neutral-900 border-neutral-800 text-white">
         <CardContent className="p-0">
-          {loading ? (
-            <div className="p-8 text-center text-neutral-400">Loading orders...</div>
-          ) : orders.length === 0 ? (
+          {filtered.length === 0 ? (
             <div className="p-8 text-center text-neutral-400">No orders found.</div>
           ) : (
             <div className="overflow-x-auto">
@@ -108,44 +88,41 @@ export default function OrdersPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-neutral-800">
-                  {orders.map((order) => {
-                    const parsedItems = typeof order.items === 'string' ? JSON.parse(order.items) : order.items;
-                    return (
-                      <tr key={order.id} className="hover:bg-neutral-800/50 group">
-                        <td className="px-6 py-4 font-mono text-orange-400">#{order.id.split('-')[0]}</td>
-                        <td className="px-6 py-4 text-neutral-400">
-                          {new Date(order.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="font-medium text-white">{order.customer_name}</div>
-                          <div className="text-xs text-neutral-500">{order.customer_phone}</div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="max-w-[200px] truncate text-neutral-300">
-                            {parsedItems?.map((item: any) => `${item.quantity}x ${item.name}`).join(', ')}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 font-semibold text-white">₹{order.total_amount}</td>
-                        <td className="px-6 py-4 flex items-center gap-2">
-                          <Select 
-                            defaultValue={order.status} 
-                            onValueChange={(val) => updateOrderStatus(order.id, val)}
-                          >
-                            <SelectTrigger className={`w-[130px] border-0 ring-0 focus:ring-0 ${getStatusColor(order.status)} font-semibold text-xs`}>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent className="bg-neutral-900 border-neutral-800 text-white">
-                              <SelectItem value="pending">Pending</SelectItem>
-                              <SelectItem value="preparing">Preparing</SelectItem>
-                              <SelectItem value="ready">Ready</SelectItem>
-                              <SelectItem value="delivered">Delivered</SelectItem>
-                              <SelectItem value="cancelled">Cancelled</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </td>
-                      </tr>
-                    );
-                  })}
+                  {filtered.map((order) => (
+                    <tr key={order.id} className="hover:bg-neutral-800/50 group">
+                      <td className="px-6 py-4 font-mono text-orange-400">#{order.id.split('-')[0]}</td>
+                      <td className="px-6 py-4 text-neutral-400">
+                        {new Date(order.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="font-medium text-white">{order.customer_name}</div>
+                        <div className="text-xs text-neutral-500">{order.customer_phone}</div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="max-w-[200px] truncate text-neutral-300">
+                          {order.items.map((item) => `${item.quantity}x ${item.name}`).join(', ')}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 font-semibold text-white">₹{order.total_amount}</td>
+                      <td className="px-6 py-4 flex items-center gap-2">
+                        <Select 
+                          defaultValue={order.status} 
+                          onValueChange={(val) => updateOrderStatus(order.id, val)}
+                        >
+                          <SelectTrigger className={`w-[130px] border-0 ring-0 focus:ring-0 ${getStatusColor(order.status)} font-semibold text-xs`}>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent className="bg-neutral-900 border-neutral-800 text-white">
+                            <SelectItem value="pending">Pending</SelectItem>
+                            <SelectItem value="preparing">Preparing</SelectItem>
+                            <SelectItem value="ready">Ready</SelectItem>
+                            <SelectItem value="delivered">Delivered</SelectItem>
+                            <SelectItem value="cancelled">Cancelled</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </div>

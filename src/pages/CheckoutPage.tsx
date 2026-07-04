@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCartStore } from '@/store/cartStore';
-import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -50,26 +49,12 @@ const CheckoutPage = () => {
         throw new Error("Please fill in all delivery details");
       }
 
-      // We'll also try to get the current user, or allow anonymous if no user exists.
-      const { data: userData } = await supabase.auth.getUser();
-      const userId = userData?.user?.id || null;
+      // Generate a random order ID locally
+      const orderId = Math.random().toString(36).substring(2, 10).toUpperCase();
 
-      const orderPayload = {
-        user_id: userId,
-        customer_name: formData.name,
-        customer_phone: formData.phone,
-        delivery_address: `${formData.address}, ${formData.pincode}`,
-        payment_method: formData.paymentMethod,
-        total_amount: total(),
-        status: 'pending',
-        items: items, // Save items as JSON
-      };
+      // Simulate a short processing delay
+      await new Promise((resolve) => setTimeout(resolve, 800));
 
-      const { data, error } = await (supabase.from('orders') as any).insert([orderPayload]).select();
-      
-      if (error) throw error;
-      
-      const orderId = data[0].id;
       clearCart();
       toast.success('Order placed successfully!');
       navigate(`/order-success?id=${orderId}`);

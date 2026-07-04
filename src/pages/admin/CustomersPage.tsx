@@ -1,42 +1,16 @@
-import React, { useEffect, useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 
+const mockCustomers = [
+  { id: 'usr-001', email: 'rahul.sharma@email.com', role: 'customer', orderCount: 12, totalSpent: 5480 },
+  { id: 'usr-002', email: 'priya.patel@email.com', role: 'customer', orderCount: 8, totalSpent: 3290 },
+  { id: 'usr-003', email: 'amit.kumar@email.com', role: 'customer', orderCount: 23, totalSpent: 11200 },
+  { id: 'usr-004', email: 'sneha.gupta@email.com', role: 'admin', orderCount: 5, totalSpent: 2150 },
+  { id: 'usr-005', email: 'vikram.singh@email.com', role: 'customer', orderCount: 15, totalSpent: 7600 },
+  { id: 'usr-006', email: 'ananya.reddy@email.com', role: 'customer', orderCount: 3, totalSpent: 990 },
+];
+
 export default function CustomersPage() {
-  const [users, setUsers] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchCustomers = async () => {
-      setLoading(true);
-      // We will try fetching users and aggregate their orders if applicable
-      try {
-        const { data: userData } = await supabase.from('users').select('*');
-        if (userData) {
-          // If orders exists, we can fetch all and manually group them.
-          const { data: orderData } = await (supabase.from('orders') as any).select('user_id, total_amount');
-          
-          const richUsers = userData.map((user: any) => {
-            const userOrders = orderData?.filter((o: any) => o.user_id === user.id) || [];
-            const totalSpent = userOrders.reduce((sum: number, o: any) => sum + (o.total_amount || 0), 0);
-            return {
-              ...user,
-              orderCount: userOrders.length,
-              totalSpent
-            };
-          });
-          
-          setUsers(richUsers);
-        }
-      } catch (e) {
-        console.error(e);
-      }
-      setLoading(false);
-    };
-    
-    fetchCustomers();
-  }, []);
-
   return (
     <div className="space-y-6">
       <h2 className="text-3xl font-bold tracking-tight">Customers</h2>
@@ -54,11 +28,7 @@ export default function CustomersPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-neutral-800">
-                {loading ? (
-                  <tr><td colSpan={4} className="p-8 text-center text-neutral-400">Loading customers...</td></tr>
-                ) : users.length === 0 ? (
-                  <tr><td colSpan={4} className="p-8 text-center text-neutral-400">No customers found in database.</td></tr>
-                ) : users.map((user) => (
+                {mockCustomers.map((user) => (
                   <tr key={user.id} className="hover:bg-neutral-800/50">
                     <td className="px-6 py-4">
                       <div className="font-semibold text-white">{user.email}</div>

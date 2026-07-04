@@ -1,23 +1,14 @@
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Flame, MapPin, Clock, Star, ChevronDown, Plus, ShoppingCart } from 'lucide-react';
-import { useEffect, useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 import { useCartStore } from '@/store/cartStore';
+import { menuItems as allMenuItems } from '@/data/menuData';
 import { toast } from 'sonner';
 
 export default function Index() {
-  const [popularItems, setPopularItems] = useState<any[]>([]);
+  // Use first 3 items from local menu data as "Most Popular"
+  const popularItems = allMenuItems.slice(0, 3);
   const { addItem } = useCartStore();
-
-  useEffect(() => {
-    const fetchPopular = async () => {
-      // Just picking the first 3 items as "Most Popular" for the demo
-      const { data } = await supabase.from('menu_items').select('*').limit(3);
-      if (data) setPopularItems(data);
-    };
-    fetchPopular();
-  }, []);
 
   const categories = [
     { name: 'Burgers', count: 3, path: 'M18 13H6c-1.1 0-2 .9-2 2s.9 2 2 2h12c1.1 0 2-.9 2-2s-.9-2-2-2zM18 5H6C3.79 5 2 6.79 2 9c0 1.54 1.13 2.91 2.67 3.3A2.99 2.99 0 016.94 13h10.12a2.99 2.99 0 012.27-1.7C20.87 11.91 22 10.54 22 9c0-2.21-1.79-4-4-4z' },
@@ -249,12 +240,12 @@ export default function Index() {
                   key={item.id} 
                   className="min-w-[280px] sm:min-w-[320px] rounded-2xl glass-card overflow-hidden snap-start flex flex-col"
                 >
-                  <img src={item.image_url || 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd'} alt={item.name} className="w-full h-48 object-cover" />
+                  <img src={item.image} alt={item.name} className="w-full h-48 object-cover" />
                   <div className="p-5 flex flex-col flex-1">
                     <h3 className="font-display tracking-wide font-semibold text-xl mb-1">{item.name}</h3>
                     <p className="text-sm text-muted-foreground line-clamp-2 mb-4 flex-1">{item.description}</p>
                     <div className="flex items-center justify-between mt-auto">
-                      <span className="font-bold text-lg">${Number(item.price).toFixed(2)}</span>
+                      <span className="font-bold text-lg">₹{item.price}</span>
                       <button 
                         onClick={() => {
                           addItem(item);

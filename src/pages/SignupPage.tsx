@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Flame, Mail, Lock, Eye, EyeOff, User, Phone } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 export default function SignupPage() {
@@ -23,57 +22,16 @@ export default function SignupPage() {
     }
     
     setLoading(true);
-    try {
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            full_name: fullName,
-            phone: phone
-          }
-        }
-      });
-      if (error) throw error;
-      
-      // If inserted, verify user
-      if (data.user) {
-        // We explicitly insert into public.users if a trigger doesn't exist
-        // Note: Usually it's better to use postgres triggers for this!
-        const { error: insertError } = await (supabase.from('users') as any).insert([
-          {
-            id: data.user.id,
-            email: email,
-            role: 'customer'
-          }
-        ]);
-        if (insertError) {
-          console.error("Error inserting user:", insertError);
-          // Don't throw here to avoid preventing login, as auth completed.
-        }
-      }
-
-      toast.success("Account created successfully! Check email if confirmation is required, otherwise please Sign In.");
-      navigate('/login');
-    } catch (error: any) {
-      toast.error(error.message || "Registration failed");
-    } finally {
+    // Prototype mode — simulate signup
+    setTimeout(() => {
+      toast.success("Account created successfully! Please Sign In.");
       setLoading(false);
-    }
+      navigate('/login');
+    }, 800);
   };
 
-  const handleGoogleAuth = async () => {
-    try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
-        }
-      });
-      if (error) throw error;
-    } catch (error: any) {
-      toast.error(error.message || "Google auth failed");
-    }
+  const handleGoogleAuth = () => {
+    toast.info("Google login coming soon!");
   };
 
   return (

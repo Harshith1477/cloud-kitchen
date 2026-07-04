@@ -1,5 +1,4 @@
-import React, { useEffect, useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,66 +13,55 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { Label } from '@/components/ui/label';
+import { menuItems as staticMenuItems } from '@/data/menuData';
+
+const initialItems = staticMenuItems.map((item) => ({
+  id: item.id,
+  name: item.name,
+  description: item.description,
+  price: item.price,
+  category: item.category,
+  image_url: item.image,
+  prep_time: `${item.prepTime} mins`,
+  is_veg: item.isVeg,
+  is_available: true,
+}));
 
 export default function MenuManagerPage() {
-  const [menuItems, setMenuItems] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [menuItems, setMenuItems] = useState(initialItems);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  const fetchMenu = async () => {
-    setLoading(true);
-    const { data } = await (supabase.from('menu_items') as any).select('*').order('category');
-    if (data) setMenuItems(data);
-    setLoading(false);
+  const toggleAvailability = (id: string, currentStatus: boolean) => {
+    setMenuItems((prev) =>
+      prev.map((item) => (item.id === id ? { ...item, is_available: !currentStatus } : item))
+    );
+    toast.success('Availability updated');
   };
 
-  useEffect(() => {
-    fetchMenu();
-  }, []);
-
-  const toggleAvailability = async (id: string, currentStatus: boolean) => {
-    const { error } = await (supabase.from('menu_items') as any).update({ is_available: !currentStatus }).eq('id', id);
-    if (!error) {
-      toast.success('Availability updated');
-      fetchMenu();
-    } else {
-      toast.error('Update failed');
-    }
-  };
-
-  const deleteItem = async (id: string) => {
+  const deleteItem = (id: string) => {
     if (!confirm('Are you sure you want to delete this item?')) return;
-    const { error } = await (supabase.from('menu_items') as any).delete().eq('id', id);
-    if (!error) {
-      toast.success('Item deleted');
-      fetchMenu();
-    } else {
-      toast.error('Deletion failed');
-    }
+    setMenuItems((prev) => prev.filter((item) => item.id !== id));
+    toast.success('Item deleted');
   };
 
-  const handleAddItem = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleAddItem = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     const newItem = {
+      id: Math.random().toString(36).substring(2, 10),
       name: formData.get('name') as string,
       description: formData.get('description') as string,
       price: Number(formData.get('price')),
       category: formData.get('category') as string,
-      image_url: formData.get('image_url') as string,
+      image_url: (formData.get('image_url') as string) || 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400&h=300&fit=crop',
       prep_time: formData.get('prep_time') as string,
       is_veg: formData.get('is_veg') === 'true',
       is_available: true,
     };
 
-    const { error } = await (supabase.from('menu_items') as any).insert([newItem]);
-    if (!error) {
-      toast.success('Item added successfully');
-      setIsDialogOpen(false);
-      fetchMenu();
-    } else {
-      toast.error('Failed to add item');
-    }
+    setMenuItems((prev) => [...prev, newItem]);
+    toast.success('Item added successfully');
+    setIsDialogOpen(false);
   };
 
   return (
@@ -147,9 +135,7 @@ export default function MenuManagerPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-neutral-800">
-              {loading ? (
-                <tr><td colSpan={6} className="p-8 text-center text-neutral-400">Loading directory...</td></tr>
-              ) : menuItems.length === 0 ? (
+              {menuItems.length === 0 ? (
                 <tr><td colSpan={6} className="p-8 text-center text-neutral-400">No menu items found.</td></tr>
               ) : menuItems.map((item) => (
                 <tr key={item.id} className="hover:bg-neutral-800/50">
